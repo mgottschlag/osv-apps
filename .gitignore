@@ -2,3 +2,5 @@ upstream
 src
 ROOTFS
 install
+/mysql/build
+/mysql/mysql-5.6.21
