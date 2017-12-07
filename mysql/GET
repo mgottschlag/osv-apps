@@ -26,6 +26,7 @@ make install DESTDIR=$ROOTDIR
 cd $ROOTDIR
 egrep mysql /etc/services > etc/services
 cp $BASEDIR/my.cnf etc/
+rm usr/my.cnf
 cd usr
 
 ./scripts/mysql_install_db --force --basedir=./ --ldata=data
