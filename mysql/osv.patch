@@ -37,9 +37,8 @@ conditional resolve to true.
  ENDIF()
  IF(NOT COMPILATION_COMMENT)
    SET(COMPILATION_COMMENT "Source distribution")
-diff -ur mysql-5.6.21/sql/sql_acl.cc mysql-5.6.21-2/sql/sql_acl.cc
---- mysql-5.6.21/sql/sql_acl.cc	2017-09-28 13:23:12.536504772 +0200
-+++ mysql-5.6.21-2/sql/sql_acl.cc	2014-09-11 15:53:31.000000000 +0200
+--- a/sql/sql_acl.cc	2017-09-28 13:23:12.536504772 +0200
++++ b/sql/sql_acl.cc	2014-09-11 15:53:31.000000000 +0200
 @@ -3212,7 +3212,7 @@
        * An empty password is considered to be of mysql_native type.
      */
@@ -49,4 +48,58 @@ diff -ur mysql-5.6.21/sql/sql_acl.cc mysql-5.6.21-2/sql/sql_acl.cc
      {
        if (combo->uses_identified_by_password_clause)
        {
+
+--- a/sql/sql_connect.cc	2014-09-11 09:53:31.000000000 -0400
++++ b/sql/sql_connect.cc	2017-12-12 05:19:43.959754711 -0500
+@@ -35,6 +35,8 @@
+ #include "sql_acl.h"  // acl_getroot, NO_ACCESS, SUPER_ACL
+ #include "sql_callback.h"
+ 
++#include "../../../../include/helper/introspection.hh"
++
+ #include <algorithm>
+ 
+ using std::min;
+@@ -972,6 +974,8 @@
+     NET *net= &thd->net;
+     mysql_socket_set_thread_owner(net->vio->mysql_socket);
+ 
++    DBUG_PRINT("error", ("test output"));
++    introspection_marker("mysql prepare_connection");
+     rc= thd_prepare_connection(thd);
+     if (rc)
+       goto end_thread;
+@@ -979,12 +982,14 @@
+     while (thd_is_connection_alive(thd))
+     {
+       mysql_audit_release(thd);
++      introspection_marker("mysql do_command");
+       if (do_command(thd))
+   break;
+     }
+     end_connection(thd);
+ 
+ end_thread:
++    introspection_marker("mysql close_connection");
+     close_connection(thd);
+     if (MYSQL_CALLBACK_ELSE(thread_scheduler, end_thread, (thd, 1), 0))
+       return;                                 // Probably no-threads
+--- a/sql/main.cc	2014-09-11 09:53:31.000000000 -0400
++++ b/sql/main.cc	2017-12-21 09:29:37.478436767 -0500
+@@ -14,6 +14,8 @@
+    along with this program; if not, write to the Free Software Foundation,
+    51 Franklin Street, Suite 500, Boston, MA 02110-1335 USA */
+ 
++#include "../../../../include/helper/introspection.hh"
++
+ /* 
+   main() for mysqld.
+   Calls mysqld_main() entry point exported by sql library.
+@@ -22,5 +24,6 @@
+ 
+ int main(int argc, char **argv)
+ {
++  introspection_init();
+   return mysqld_main(argc, argv);
+ }
 

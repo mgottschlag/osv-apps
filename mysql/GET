@@ -19,8 +19,8 @@ cd $SRCDIR
 patch -p1 < ../osv.patch
 
 cd $BUILDDIR
-CFLAGS="-fPIC" CXXFLAGS="-fPIC" cmake -DCMAKE_INSTALL_PREFIX:PATH=/usr ../mysql-$VERSION
-make -j4
+CFLAGS="-fPIC" CXXFLAGS="-fPIC" cmake -DCMAKE_INSTALL_PREFIX:PATH=/usr -DCMAKE_BUILD_TYPE=Release ../mysql-$VERSION
+make -j`nproc`
 make install DESTDIR=$ROOTDIR
 
 cd $ROOTDIR
@@ -29,12 +29,18 @@ cp $BASEDIR/my.cnf etc/
 rm usr/my.cnf
 cd usr
 
+rm -r data
 ./scripts/mysql_install_db --force --basedir=./ --ldata=data
 cat <<EOF | eval './bin/mysqld  --bootstrap --skip-grant-tables --basedir=./ --datadir=data --max_allowed_packet=8M --net_buffer_length=16K'
 use mysql;
-set table_type=myisam;
-insert into user values('%', 'admin', password('osv'), 'Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','','','','',0,0,0);
+set default_storage_engine=MyISAM;
+select * from mysql.user;
+insert into user values('%', 'admin', password('osv'), 'Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','','','','',0,0,0,0,'mysql_native_password','','N');
+delete from mysql.user where User = '' and Host = 'localhost';
 EOF
+
+cd $BASEDIR
+./prepare_tpcc.sh
 
 cd $BUILDDIR/sql
 $(cat CMakeFiles/mysqld.dir/link.txt) -shared
